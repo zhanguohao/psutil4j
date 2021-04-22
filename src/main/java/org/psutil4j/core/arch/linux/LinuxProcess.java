@@ -3,6 +3,8 @@ package org.psutil4j.core.arch.linux;
 import org.psutil4j.common.Constants;
 import org.psutil4j.common.enums.State;
 import org.psutil4j.core.arch.NativeProcess;
+import org.psutil4j.core.arch.linux.enums.LinuxMemoryInfoEnum;
+import org.psutil4j.core.arch.linux.enums.LinuxProcessStatEnum;
 import org.psutil4j.core.jna.NativeProcessOperation;
 import org.psutil4j.core.pojo.PriorityUserId;
 import org.psutil4j.utils.CommonUtils;
@@ -14,16 +16,15 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author zhangguohao
  */
 public class LinuxProcess implements NativeProcess {
 
-    private Integer pid;
-    private String name;
-    private Integer ppid;
+    private static final LinuxPlatform linuxPlatform = LinuxPlatform.getInstance();
+
+    private final Integer pid;
 
     public LinuxProcess(Integer pid) {
         if (pid == null || pid == 0) {
@@ -35,7 +36,11 @@ public class LinuxProcess implements NativeProcess {
 
     @Override
     public String getName() {
-        return getStat().getB();
+        Quartet<Integer, String, String, EnumMap<LinuxProcessStatEnum, Long>> stat = getStat();
+        if (stat != null) {
+            return stat.getB();
+        }
+        return null;
     }
 
     @Override
@@ -66,28 +71,45 @@ public class LinuxProcess implements NativeProcess {
 
     @Override
     public Integer getStartTime() {
-        return null;
+        Integer bootTime = linuxPlatform.getBootTime();
+        return (int) (getStat().getD().get(LinuxProcessStatEnum.STARTTIME) / LinuxPlatform.USER_HZ) + bootTime;
     }
 
     @Override
-    public Map<String, String> getMemoryInfo() {
-        return null;
+    public EnumMap<LinuxMemoryInfoEnum, Integer> getMemoryInfo() {
+        EnumMap<LinuxMemoryInfoEnum, Integer> memInfo = new EnumMap<>(LinuxMemoryInfoEnum.class);
+        String statmPath = String.format(ProcPath.PID_STATM, this.pid);
+        List<String> lineList = CommonUtils.getFileContentWithString(statmPath);
+        if (lineList == null || lineList.size() <= 0) {
+            return null;
+        }
+        String statmStr = lineList.get(0);
+        LinuxMemoryInfoEnum[] enumArray = LinuxMemoryInfoEnum.class.getEnumConstants();
+        String[] fields = statmStr.split(Constants.SYMBOL_SPACING);
+        for (int i = 0; i < enumArray.length && i < fields.length; i++) {
+            memInfo.put(enumArray[i], ParseUtils.parseIntOrDefault(fields[i], 0));
+        }
+        return memInfo;
     }
 
     @Override
     public Integer getNice() {
-        return null;
+        return NativeProcessOperation.getPriority(this.pid);
     }
 
     @Override
     public Integer setNice(Integer value) {
-        return null;
+        return NativeProcessOperation.setPriority(this.pid, value);
     }
 
     @Override
     public State getState() {
-        String stateValue = getStat().getC() != null ? getStat().getC() : "";
-        return getState(stateValue);
+        Quartet<Integer, String, String, EnumMap<LinuxProcessStatEnum, Long>> stat = getStat();
+        if (stat != null) {
+            String stateValue = stat.getC() != null ? stat.getC() : "";
+            return getState(stateValue);
+        }
+        return State.OTHER;
     }
 
     @Override
@@ -97,16 +119,49 @@ public class LinuxProcess implements NativeProcess {
 
     @Override
     public Integer getPpid() {
-        return getStat().getD().get(ProcessStatEnum.PPID).intValue();
-    }
-
-    @Override
-    public PriorityUserId getUids() {
+        Quartet<Integer, String, String, EnumMap<LinuxProcessStatEnum, Long>> stat = getStat();
+        if (stat != null) {
+            return stat.getD().get(LinuxProcessStatEnum.PPID).intValue();
+        }
         return null;
     }
 
     @Override
+    public PriorityUserId getUids() {
+        String uidsPrefix = "Uid:";
+        return getPriorityUserId(uidsPrefix);
+    }
+
+    @Override
     public PriorityUserId getGids() {
+        String gidsPrefix = "Gid:";
+        return getPriorityUserId(gidsPrefix);
+    }
+
+    /**
+     * Parse /proc/{pid}/status prefix with Uid: or Gid:
+     *
+     * @param prefix prefix link Uid:  Gid:
+     * @return PriorityUserId
+     */
+    private PriorityUserId getPriorityUserId(String prefix) {
+        PriorityUserId priorityUserId = new PriorityUserId();
+        String statusPath = String.format(ProcPath.PID_STATUS, this.pid);
+        List<String> lineList = CommonUtils.getFileContentWithString(statusPath);
+        if (lineList == null || lineList.size() <= 0) {
+            return null;
+        }
+        for (String line : lineList) {
+            if (line.startsWith(prefix)) {
+                String[] uids = line.substring(prefix.length() + 1).split(Constants.SYMBOL_HORIZONTAL_TAB);
+                if (uids.length >= 3) {
+                    priorityUserId.setRealUserId(Integer.parseInt(uids[0]));
+                    priorityUserId.setEffectiveUserId(Integer.parseInt(uids[1]));
+                    priorityUserId.setSavedSetUserId(Integer.parseInt(uids[2]));
+                    return priorityUserId;
+                }
+            }
+        }
         return null;
     }
 
@@ -117,7 +172,7 @@ public class LinuxProcess implements NativeProcess {
      *
      * @return Quartet<pid, name, state, EnumMap < ProcessStatEnum, Long>>
      */
-    public Quartet<Integer, String, String, EnumMap<ProcessStatEnum, Long>> getStat() {
+    public Quartet<Integer, String, String, EnumMap<LinuxProcessStatEnum, Long>> getStat() {
         String statPath = String.format(ProcPath.PID_STAT, this.getPid());
         List<String> lineList = CommonUtils.getFileContentWithString(statPath);
         if (lineList == null || lineList.size() <= 0) {
@@ -129,8 +184,8 @@ public class LinuxProcess implements NativeProcess {
             String name = statStr.substring(statStr.indexOf(Constants.SYMBOL_OPEN_PARENTHESIS) + 1, endOfName);
             String[] fields = statStr.substring(endOfName + 2).split(Constants.SYMBOL_SPACING);
             String state = fields[0];
-            EnumMap<ProcessStatEnum, Long> statEnumMap = new EnumMap<ProcessStatEnum, Long>(ProcessStatEnum.class);
-            ProcessStatEnum[] enumArray = ProcessStatEnum.class.getEnumConstants();
+            EnumMap<LinuxProcessStatEnum, Long> statEnumMap = new EnumMap<>(LinuxProcessStatEnum.class);
+            LinuxProcessStatEnum[] enumArray = LinuxProcessStatEnum.class.getEnumConstants();
             for (int i = 2; i < enumArray.length && i - 2 < fields.length; i++) {
                 statEnumMap.put(enumArray[i], ParseUtils.parseLongOrDefault(fields[i - 2], 0L));
             }

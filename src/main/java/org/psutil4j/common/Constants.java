@@ -31,6 +31,7 @@ public class Constants {
     public static final String SYMBOL_OPEN_BRACKET = "[";
     public static final String SYMBOL_CLOSE_BRACKET = "]";
     public static final String SYMBOL_SPACING = " ";
+    public static final String SYMBOL_HORIZONTAL_TAB = "\t";
 
     /**
      * system property

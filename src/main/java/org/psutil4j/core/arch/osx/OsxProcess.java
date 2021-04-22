@@ -5,7 +5,7 @@ import org.psutil4j.core.arch.NativeProcess;
 import org.psutil4j.core.jna.NativeProcessOperation;
 import org.psutil4j.core.pojo.PriorityUserId;
 
-import java.util.Map;
+import java.util.EnumMap;
 
 /**
  * @author zhangguohao
@@ -15,8 +15,6 @@ public class OsxProcess implements NativeProcess {
     private final OsxPlatform platform = new OsxPlatform();
 
     private Integer pid;
-    private String name;
-    private Integer ppid;
 
     public OsxProcess(Integer pid) {
         if (pid == null || pid == 0) {
@@ -45,7 +43,7 @@ public class OsxProcess implements NativeProcess {
     }
 
     @Override
-    public Map<String, String> getMemoryInfo() {
+    public EnumMap<?, Integer> getMemoryInfo() {
         return null;
     }
 

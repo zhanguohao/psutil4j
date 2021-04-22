@@ -4,7 +4,9 @@ import com.sun.jna.Platform;
 import org.psutil4j.common.Constants;
 import org.psutil4j.core.arch.NativePlatform;
 import org.psutil4j.core.arch.NativeProcess;
+import org.psutil4j.utils.CommandUtils;
 import org.psutil4j.utils.CommonUtils;
+import org.psutil4j.utils.ParseUtils;
 
 import java.io.File;
 import java.util.*;
@@ -16,18 +18,20 @@ import java.util.*;
  */
 public class LinuxPlatform implements NativePlatform {
 
+    /**
+     * Jiffies per second, used for process time counters.
+     */
+    public static final int USER_HZ = ParseUtils.parseIntOrDefault(CommandUtils.getFirstAnswer("getconf CLK_TCK"), 100);
 
     private static class LinuxPlatformHandler {
         private static final LinuxPlatform INSTANCE = new LinuxPlatform();
     }
 
-    @Override
-    public LinuxPlatform getInstance() {
+    public static LinuxPlatform getInstance() {
         return LinuxPlatformHandler.INSTANCE;
     }
 
-    @Override
-    public Integer getOsType() {
+    public static Integer getOsType() {
         return Platform.LINUX;
     }
 
@@ -59,7 +63,9 @@ public class LinuxPlatform implements NativePlatform {
         Map<Integer, Integer> ppidMap = new HashMap<>(128);
         for (Integer pid : getPids()) {
             LinuxProcess linuxProcess = new LinuxProcess(pid);
-            ppidMap.put(pid, linuxProcess.getPpid());
+            if (linuxProcess.getPpid() != null) {
+                ppidMap.put(pid, linuxProcess.getPpid());
+            }
         }
         return ppidMap;
     }

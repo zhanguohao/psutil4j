@@ -44,7 +44,7 @@ public class Process {
     }
 
     public Integer parent() {
-        return null;
+        return this.process.getPpid();
     }
 
     public List<Integer> parents() {

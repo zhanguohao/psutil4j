@@ -3,6 +3,7 @@ package org.psutil4j.core.jna;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
+import org.psutil4j.common.enums.Priority;
 
 /**
  * @author zhangguohao
@@ -23,6 +24,28 @@ public class NativeProcessOperation {
         }
         return null;
     }
+
+    /**
+     * get process priority
+     *
+     * @param pid pid
+     * @return priority
+     */
+    public static Integer getPriority(Integer pid) {
+        return DELEGATE.getpriority(Priority.PRIO_PROCESS.getCode(), pid);
+    }
+
+    /**
+     * set process priority
+     *
+     * @param pid   pid
+     * @param value priority
+     * @return error num, 0 is ok.
+     */
+    public static Integer setPriority(Integer pid, Integer value) {
+        return DELEGATE.setpriority(Priority.PRIO_PROCESS.getCode(), pid, value);
+    }
+
 
     interface InterfaceDelegate extends Library {
 
@@ -108,7 +131,7 @@ public class NativeProcessOperation {
          * @param which which
          * @param who   who
          * @param prio  prio
-         * @return priority
+         * @return error num, 0 is ok.
          */
         int setpriority(int which, int who, int prio);
 

@@ -3,7 +3,7 @@ package org.psutil4j.core.arch;
 import org.psutil4j.common.enums.State;
 import org.psutil4j.core.pojo.PriorityUserId;
 
-import java.util.Map;
+import java.util.EnumMap;
 
 /**
  * @author zhangguohao
@@ -38,11 +38,11 @@ public interface NativeProcess {
     Integer getStartTime();
 
     /**
-     * get memory info
+     * get mem info
      *
-     * @return memory info
+     * @return mem info
      */
-    Map<String, String> getMemoryInfo();
+    EnumMap<?, Integer> getMemoryInfo();
 
     /**
      * get process nice

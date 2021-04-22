@@ -9,20 +9,6 @@ import java.util.Map;
 public interface NativePlatform {
 
     /**
-     * get platform instance
-     *
-     * @return NativePlatform
-     */
-    NativePlatform getInstance();
-
-    /**
-     * get os type
-     *
-     * @return os type
-     */
-    Integer getOsType();
-
-    /**
      * get platform Process
      *
      * @param pid pid

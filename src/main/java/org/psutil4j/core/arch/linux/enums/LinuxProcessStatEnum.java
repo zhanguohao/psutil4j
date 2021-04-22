@@ -1,6 +1,6 @@
-package org.psutil4j.core.arch.linux;
+package org.psutil4j.core.arch.linux.enums;
 
-public enum ProcessStatEnum {
+public enum LinuxProcessStatEnum {
 
     /**
      * The process ID.

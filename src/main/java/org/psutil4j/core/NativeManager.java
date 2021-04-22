@@ -24,7 +24,7 @@ public class NativeManager {
 
     public static NativePlatform getPlatform() throws NotSupportPlatformException {
         if (nativePlatforms.containsKey(Platform.getOSType())) {
-            return nativePlatforms.get(Platform.getOSType()).getInstance();
+            return nativePlatforms.get(Platform.getOSType());
         } else {
             throw new NotSupportPlatformException(String.format("Platform: %s is not support now.", System.getProperty(Constants.OS_NAME)));
         }
@@ -32,7 +32,7 @@ public class NativeManager {
 
     public static NativePlatform getPlatform(Integer osType) {
         if (nativePlatforms.containsKey(Platform.getOSType())) {
-            return nativePlatforms.get(Platform.getOSType()).getInstance();
+            return nativePlatforms.get(Platform.getOSType());
         }
         return null;
     }
@@ -53,11 +53,10 @@ public class NativeManager {
         );
         for (Class<?> c : reflections.getSubTypesOf(NativePlatform.class)) {
             try {
-                Object co = c.newInstance();
                 Method getOsType = c.getMethod("getOsType");
                 Method getInstance = c.getMethod("getInstance");
-                register((Integer) getOsType.invoke(co), (NativePlatform) getInstance.invoke(co));
-            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
+                register((Integer) getOsType.invoke(null), (NativePlatform) getInstance.invoke(null));
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
                 e.printStackTrace();
             }
         }
