@@ -1,4 +1,4 @@
-package org.psutil4j.constant;
+package org.psutil4j.common.enums;
 
 /**
  * @author zhangguohao
