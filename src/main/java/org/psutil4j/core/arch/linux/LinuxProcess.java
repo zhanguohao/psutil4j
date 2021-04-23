@@ -1,11 +1,14 @@
 package org.psutil4j.core.arch.linux;
 
 import org.psutil4j.common.Constants;
+import org.psutil4j.common.enums.Signal;
 import org.psutil4j.common.enums.State;
 import org.psutil4j.core.arch.NativeProcess;
 import org.psutil4j.core.arch.linux.enums.LinuxMemoryInfoEnum;
 import org.psutil4j.core.arch.linux.enums.LinuxProcessStatEnum;
+import org.psutil4j.core.arch.linux.utils.ProcUtils;
 import org.psutil4j.core.jna.NativeProcessOperation;
+import org.psutil4j.core.jna.NativeSignalProcess;
 import org.psutil4j.core.pojo.PriorityUserId;
 import org.psutil4j.utils.CommonUtils;
 import org.psutil4j.utils.ParseUtils;
@@ -14,6 +17,7 @@ import org.psutil4j.utils.tuples.Quartet;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 
@@ -136,6 +140,19 @@ public class LinuxProcess implements NativeProcess {
     public PriorityUserId getGids() {
         String gidsPrefix = "Gid:";
         return getPriorityUserId(gidsPrefix);
+    }
+
+    @Override
+    public boolean isRunning() {
+        return NativeSignalProcess.kill(this.pid, Signal.SIGHUP.getCode()) == 0;
+    }
+
+    @Override
+    public List<Integer> getThreadIds() {
+        if (!isRunning()) {
+            return new ArrayList<>();
+        }
+        return ProcUtils.getProcessIds(String.format(ProcPath.TASK_PATH, this.pid));
     }
 
     /**

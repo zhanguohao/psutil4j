@@ -57,4 +57,14 @@ public class OsxPlatform implements NativePlatform {
     public Integer getBootTime() {
         return null;
     }
+
+    @Override
+    public boolean terminate(Integer pid) {
+        return false;
+    }
+
+    @Override
+    public boolean kill(Integer pid) {
+        return false;
+    }
 }

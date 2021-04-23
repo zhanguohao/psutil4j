@@ -33,6 +33,8 @@ public interface NativePlatform {
 
     /**
      * get ppid map
+     * <p>
+     * <pid ppid>
      *
      * @return ppid map
      */
@@ -44,5 +46,15 @@ public interface NativePlatform {
      * @return boot timestamp
      */
     Integer getBootTime();
+
+    /**
+     * terminate
+     */
+    boolean terminate(Integer pid);
+
+    /**
+     * kill
+     */
+    boolean kill(Integer pid);
 
 }

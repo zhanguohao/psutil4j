@@ -59,6 +59,7 @@ public enum LinuxProcessStatEnum {
      * number is in bits 15 to 8.)
      */
     TTY_NR,
+
     /**
      * The ID of the foreground process group of the controlling terminal of the
      * process.

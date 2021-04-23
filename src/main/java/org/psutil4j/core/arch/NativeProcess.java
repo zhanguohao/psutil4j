@@ -4,6 +4,7 @@ import org.psutil4j.common.enums.State;
 import org.psutil4j.core.pojo.PriorityUserId;
 
 import java.util.EnumMap;
+import java.util.List;
 
 /**
  * @author zhangguohao
@@ -93,5 +94,15 @@ public interface NativeProcess {
      * @return process GIDs
      */
     PriorityUserId getGids();
+
+    /**
+     * is running or not
+     */
+    boolean isRunning();
+
+    /**
+     * get thread ids
+     */
+    List<Integer> getThreadIds();
 
 }

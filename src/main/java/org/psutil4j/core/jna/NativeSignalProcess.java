@@ -11,7 +11,14 @@ public class NativeSignalProcess {
 
     private static final InterfaceDelegate DELEGATE = Native.load((Platform.isWindows() ? "msvcrt" : "c"), InterfaceDelegate.class);
 
-    public int kill(int pid, int signal) {
+    /**
+     * send signal to process with pid
+     *
+     * @param pid    pid
+     * @param signal signal
+     * @return 0 -> success ; -1 -> fail
+     */
+    public static int kill(int pid, int signal) {
         return DELEGATE.kill(pid, signal);
     }
 
@@ -19,7 +26,7 @@ public class NativeSignalProcess {
         /**
          * Send a signal to the specified process
          *
-         * @param pid pid
+         * @param pid    pid
          * @param signal signal
          * @return int
          */

@@ -6,6 +6,7 @@ import org.psutil4j.core.jna.NativeProcessOperation;
 import org.psutil4j.core.pojo.PriorityUserId;
 
 import java.util.EnumMap;
+import java.util.List;
 
 /**
  * @author zhangguohao
@@ -79,6 +80,16 @@ public class OsxProcess implements NativeProcess {
 
     @Override
     public PriorityUserId getGids() {
+        return null;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return false;
+    }
+
+    @Override
+    public List<Integer> getThreadIds() {
         return null;
     }
 }

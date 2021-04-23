@@ -1,10 +1,10 @@
 package org.psutil4j.core;
 
+import org.psutil4j.core.arch.NativePlatform;
 import org.psutil4j.core.arch.NativeProcess;
 import org.psutil4j.exception.NotSupportPlatformException;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Represents an OS process with the given PID.
@@ -24,15 +24,8 @@ import java.util.List;
 public class Process {
 
     private Integer pid;
-    private String exe;
-    private Date createTime;
-    private Boolean running;
-    private String hash;
-    private Integer ppid;
-    private NativeProcess process;
-    private Integer lastSysCpuTimes;
-    private Integer lastProcCpuTimes;
-    private Integer exitcode;
+    private final NativeProcess process;
+    private final NativePlatform nativePlatform = NativeManager.getPlatform();
 
     public Process(Integer pid) throws NotSupportPlatformException {
         this.process = NativeManager.getProcess(pid);
@@ -41,6 +34,12 @@ public class Process {
         } else {
             this.pid = pid;
         }
+        Integer ppid = this.process.getPpid();
+        String exe = this.process.getExe();
+        String name = this.process.getName();
+        String[] cmdLine = this.process.getCmdLine();
+        // timestamp
+        Integer startTime = this.process.getStartTime();
     }
 
     public Integer parent() {
@@ -48,21 +47,73 @@ public class Process {
     }
 
     public List<Integer> parents() {
-        return null;
+        List<Integer> parents = new ArrayList<>();
+        Map<Integer, Integer> ppidMap = nativePlatform.getPpidMap();
+        Integer currentPid = this.pid;
+        while (ppidMap.containsKey(currentPid)) {
+            parents.add(ppidMap.get(currentPid));
+            currentPid = ppidMap.get(currentPid);
+        }
+        return parents;
+    }
+
+    /**
+     * Get children pids
+     * A ─┐
+     * │
+     * ├─ B (child) ─┐
+     * │             └─ E (grandchild) ─┐
+     * │                                └─ F (great grandchild)
+     * ├─ C (child)
+     * └─ D (child)
+     *
+     * @param recursive recursive or not
+     * @return pids
+     */
+    public List<Integer> children(boolean recursive) {
+        List<Integer> children = new ArrayList<>();
+        Map<Integer, Integer> ppidMap = nativePlatform.getPpidMap();
+        Map<Integer, List<Integer>> childrenPpidMap = new HashMap<>();
+        for (Map.Entry<Integer, Integer> entry : ppidMap.entrySet()) {
+            List<Integer> childrenValue = childrenPpidMap.get(entry.getValue()) != null ? childrenPpidMap.get(entry.getValue()) : new ArrayList<>();
+            childrenValue.add(entry.getKey());
+            childrenPpidMap.put(entry.getValue(), childrenValue);
+        }
+        if (!recursive) {
+            if (childrenPpidMap.containsKey(this.pid)) {
+                return childrenPpidMap.get(this.pid);
+            }
+            return children;
+        }
+        Queue<Integer> queue = new LinkedList<>();
+        queue.add(this.pid);
+        while (!queue.isEmpty()) {
+            Integer currentPid = queue.poll();
+            if (childrenPpidMap.containsKey(currentPid)) {
+                children.addAll(childrenPpidMap.get(currentPid));
+                queue.addAll(childrenPpidMap.get(currentPid));
+            }
+        }
+        return children;
     }
 
     public Integer nice(Integer value) {
-        return null;
+        if (this.process.getNice().equals(value)) {
+            return value;
+        }
+        if (this.process.setNice(value) == 0) {
+            return value;
+        }
+        return this.process.getNice();
     }
 
-    public void terminate() {
+    public boolean terminate() {
+        return nativePlatform.terminate(this.pid);
+
     }
 
-    public void kill() {
-    }
-
-    public Integer waitProcess() {
-        return null;
+    public boolean kill() {
+        return nativePlatform.kill(this.pid);
     }
 
     public Integer getPid() {
@@ -75,6 +126,10 @@ public class Process {
 
     public Integer getPpid() {
         return this.process.getPpid();
+    }
+
+    public boolean isRunning() {
+        return this.process.isRunning();
     }
 
 }

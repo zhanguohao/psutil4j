@@ -2,14 +2,18 @@ package org.psutil4j.core.arch.linux;
 
 import com.sun.jna.Platform;
 import org.psutil4j.common.Constants;
+import org.psutil4j.common.enums.Signal;
 import org.psutil4j.core.arch.NativePlatform;
 import org.psutil4j.core.arch.NativeProcess;
+import org.psutil4j.core.arch.linux.utils.ProcUtils;
+import org.psutil4j.core.jna.NativeSignalProcess;
 import org.psutil4j.utils.CommandUtils;
 import org.psutil4j.utils.CommonUtils;
 import org.psutil4j.utils.ParseUtils;
 
-import java.io.File;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * for linux
@@ -42,15 +46,7 @@ public class LinuxPlatform implements NativePlatform {
 
     @Override
     public List<Integer> getPids() {
-        List<Integer> pids = new ArrayList<>();
-        File file = new File(ProcPath.PROC);
-        if (!file.exists() || Objects.requireNonNull(file.listFiles()).length <= 0) {
-            return pids;
-        }
-        for (File f : Objects.requireNonNull(file.listFiles(procFile -> procFile.isDirectory() && CommonUtils.isInteger(procFile.getName())))) {
-            pids.add(Integer.parseInt(f.getName()));
-        }
-        return pids;
+        return ProcUtils.getProcessIds(ProcPath.PROC);
     }
 
     @Override
@@ -82,5 +78,15 @@ public class LinuxPlatform implements NativePlatform {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean terminate(Integer pid) {
+        return NativeSignalProcess.kill(pid, Signal.SIGTERM.getCode()) == 0;
+    }
+
+    @Override
+    public boolean kill(Integer pid) {
+        return NativeSignalProcess.kill(pid, Signal.SIGKILL.getCode()) == 0;
     }
 }
